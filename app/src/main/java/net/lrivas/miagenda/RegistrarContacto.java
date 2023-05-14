@@ -10,11 +10,29 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import net.lrivas.miagenda.clases.Configuraciones;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class RegistrarContacto extends AppCompatActivity {
     //ConexionSQLite objConexion;
     final String NOMBRE_BASE_DATOS = "miagenda";
     EditText nombre, telefono;
     Button botonAgregar, botonRegresar;
+    Configuraciones objConfiguracion = new Configuraciones();
+    String URL = objConfiguracion.urlwebservices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,14 +70,44 @@ public class RegistrarContacto extends AppCompatActivity {
     }
 
     private void registrar(){
-        /*try{
-            SQLiteDatabase miBaseDatos = objConexion.getWritableDatabase();
-            String comando = "INSERT INTO contactos (nombre,telefono) VALUES ('"+ nombre.getText() +"','"+ telefono.getText() +"')";
-            miBaseDatos.execSQL(comando);
-            miBaseDatos.close();
-            Toast.makeText(RegistrarContacto.this, "Datos Registrados con éxito", Toast.LENGTH_LONG).show();
+        try{
+            RequestQueue objetoPeticion = Volley.newRequestQueue(RegistrarContacto.this);
+            StringRequest peticion = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try{
+                        JSONObject objJSONResultado = new JSONObject(response.toString());
+                        String estado = objJSONResultado.getString("estado");
+                        if(estado.equals("1")){
+                            Toast.makeText(RegistrarContacto.this, "Contacto Registrado con exito", Toast.LENGTH_SHORT).show();
+                        }else{
+                            Toast.makeText(RegistrarContacto.this, "Error: "+ estado, Toast.LENGTH_SHORT).show();
+                        }
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(RegistrarContacto.this, "Error: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }){
+                @Override
+                protected Map<String,String> getParams() throws AuthFailureError {
+                    Map<String,String> params = new HashMap<String,String>();
+                    params.put("accion","registrar");
+                    params.put("nombre",nombre.getText().toString());
+                    params.put("telefono",telefono.getText().toString());
+                    return params;
+                }
+            };
+
+            objetoPeticion.add(peticion);
         }catch (Exception error){
-            Toast.makeText(RegistrarContacto.this, "Error: "+ error.getMessage(), Toast.LENGTH_LONG).show();
-        }*/
+            Toast.makeText(RegistrarContacto.this, "Error en tiempo de ejecucion: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+
     }
 }
